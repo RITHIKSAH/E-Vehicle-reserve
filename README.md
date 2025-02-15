@@ -29,6 +29,10 @@ wheel==0.44.0
 
 This project is based on **Python 3.12**
 
+This software provides an interface for customers to reserve and return vehicles, as well as pay their bills. Operators can assess the state of the vehicles in the system, and managers can generate reports. The system is implemented as a web app using Django, with the front-end designed using Bootstrap, data stored in a MySQL database, and visualisations created using the Matplotlib and Seaborn libraries. To manage the development process, we used Trello and Microsoft Teams for Scrum and Agile development, enabling efficient sprint planning, task tracking, and collaboration. The codebase was version-controlled using Git, ensuring seamless collaboration, change tracking, and smooth integration of updates.
+Skills: Python, Django, HTML, CSS, Bootstrap, MySQL, Matplotlib, Seaborn, Git, Trello, Teamwork
+
+
 Packages listed below should also be installed using **pip** before the application can run properly.
 
 - Django 5.1.2
