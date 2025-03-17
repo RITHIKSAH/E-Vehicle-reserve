@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tire-Information</title>
+      <link rel="icon" href="{% static 'images/logo_tab.png' %}" type="image/x-icon">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+      <script src="https://rawgit.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
+      <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css">
+      <style>
+        .top_section{
+          width: 100%;
+          height:100%;
+          min-height: 100px;
+          border: 1px solid black;
+          background-color: black;
+          color: white;
+        }
+        .bottom_section_left{
+          width: 15%;
+          height:85vh;
+          min-width: 150px;
+          border: 1px solid black;
+        }
+        .bottom_section_right{
+          width: 85%;
+          height:85vh;
+          border: 1px solid black;
+        }
+        .custom-btn {
+          background-color: rgb(0, 0, 0);   /* 默认背景为白色 */
+          color: rgb(255, 255, 255);              /* 默认文字颜色为黑色 */
+          border-color: rgb(255, 255, 255);       /* 默认边框为黑色 */
+        }
+
+        .custom-btn:hover {
+          background-color: rgb(255, 255, 255);   /* 悬停时背景变为黑色 */
+          color: rgb(0, 0, 0);              /* 悬停时文字变为白色 */
+          border-color: rgb(0, 0, 0);       /* 悬停时保持黑色边框 */
+        }
+      </style>
+    </head>
+
+    <body>
+      <div class="container-fluid">
+        <!-- 上半部分，横跨整个页面宽度 -->
+        <div class="row">
+          <div class="col top_section w-100 d-flex align-items-center">
+            <!-- Profile Image -->
+            <img src="{% static 'images/profileimg.jpg' %}" alt="Profile Image" class="rounded-circle" style="margin-left: 5vw;" width="100vw" height="100vw">
+            
+            <!-- User Info -->
+            <div style="margin-left: 2vw; margin-top: 2vh;">
+              <h1 style="font-size: 1.5vw; ">{{ user.username }}</h1>
+              <p style="font-size: 1.2vw;">{{ user.email }}</p>
+            </div>
+            
+            <!-- Balance and Log Out button -->
+            <div class="d-flex align-items-center" style="margin-left: auto;">
+              <h1 style="font-size: 1.5vw;">Balance:</h1>
+              <h4 style="margin-right: 10vw; font-size: 1.2vw;"><strong>&pound;{{ user.balance }}</strong></h4>
+              <div class="input-group" style="width: 250px;margin-right: 5vw;">
+                <span class="input-group-text"><strong>&pound;</strong></span>
+                <input type="number" id="rechageInput" step="0.01" class="form-control" aria-label="Dollar amount (with dot and two decimal places)">
+                <button tyep="button" onclick="recharge()" class="btn btn-outline-light">Recharge</button>
+              </div>
+              <button style="margin-right: 10vw; height:auto; font-size: 1.2vw;" type="button" class="btn btn-outline-danger btn-lg">Log Out</button>
+            </div>
+          </div>
+        </div>
+      
+        <!-- 下半部分，分为左右两部分 -->
+        <div class="row">
+          <!-- 左边部分 -->
+          <div class="col-md-6 bottom_section_left text-center" style="font-size: 21px;min-width: 250px;">
+            <nav class="nav flex-column" style="margin-top: 200px;">
+              <!-- 使用 flex 类来确保按钮水平居中 -->
+              <a href="{% url 'payment' %}" type="button" class="btn btn-outline-dark mt=5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>Payment</strong></a> 
+              <a href="{% url 'history' %}" class="btn btn-outline-dark mt-5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>History</strong></a>
+              <a href="{% url 'inprogress' %}" class="btn btn-outline-dark mt-5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>Back</strong></a>
+              <img src="{% static 'images/tire_logo_black.png' %}" alt="Brand Image" 
+                   style="margin-top: 15vh; display: block; margin-left: auto; margin-right: auto; width: 200px; height: auto;">
+            </nav>
+          </div>
+          
+          <!-- 右边部分 -->
+          <div class="col bottom_section_right text-black p-4" id="contentArea" style="background-color: rgb(204, 204, 204);">
+            <div id="noUnpaidInvoiceNoticePage" style="display: flex; justify-content: center; align-items: center; height: 100%;">
+              <h1>No Any Unpaid Invoice, Start Your Trip!</h1>
+            </div>
+          </div>
+      </div>  
+
+      <script>
+
+        function recharge(){
+          const amount = document.getElementById('rechageInput').valueAsNumber;
+          if (!isNaN(amount)){
+            fetch(`recharge/?amount=${amount}`)
+            .then(response => {
+                if (response.ok) {
+                  console.log("充值成功！");
+                  window.location.reload();
+                } else {
+                    console.error('操作失败:', response.status);  // 处理错误
+                }
+            })
+            .catch(error => {
+                console.error('请求失败:', error);  // 处理网络错误
+                
+            });
+          }
+        }
+
+        function checkExistUnpaidInvoice(){
+          console.log("按下了刷新支付页面");
+          fetch(`refreshPaymentPageData/`)
+              .then(response => response.json())
+              .then(data => {
+                console.log(data);
+                if(data.unpaidInvoice_Paid_at === null){
+                  console.log("有未支付订单！");
+                  document.getElementById('unpaidInvoicePage').style.display = 'flex';
+                  document.getElementById('invoiceButtonGroup').style.display = 'flex';
+                  document.getElementById('noUnpaidInvoiceNoticePage').style.display = 'none';
+                }
+                else{
+                  console.log("没有未支付订单！");
+                  document.getElementById('unpaidInvoicePage').style.display = 'none';
+                  document.getElementById('invoiceButtonGroup').style.display = 'none';
+                  document.getElementById('noUnpaidInvoiceNoticePage').style.display = 'flex';
+                }
+              })
+              .catch(error => console.error('Error fetching battery level:', error));
+        }
+
+        function generateInvoiceToPdf(){
+            // 选择包含发票内容的容器
+            const invoiceElement = document.querySelector('.invoice');
+            // 使用 html2pdf 转换内容为 PDF
+            html2pdf()
+              .from(invoiceElement)  // 从指定的元素生成 PDF
+              .set({
+                scale: 6,  // 设置更高的缩放比例，提高清晰度
+                filename: 'invoice.pdf',
+                html2canvas: {
+                  dpi: 400,  // 设置更高的 DPI
+                  scale: 2,  // 设置 html2canvas 的缩放比例
+                  useCORS: true  // 支持跨域请求
+                },
+                jsPDF: {
+                  unit: 'mm',
+                  format: 'a4',
+                  orientation: 'portrait'
+                }
+              })
+              .save('invoice.pdf');  // 保存为 PDF 文件
+        }
+      </script>
+        
+      <!-- jQuery and JavaScript Bundle with Popper 这里引入的是本地js文件-->
+      <script src="{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
+
+    </body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Earnings Charts</title>
+    <style>
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 20px; 
+        }
+        .chart {
+            width: 90%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chart-container">
+        
+        <div class="chart">
+            <h2>Total Amount Earned</h2>
+            <img src="data:image/png;base64,{{ chart_line }}" alt="Line Chart: Amount Earned per Day">
+        </div>
+
+        
+        <div class="chart">
+            <h2>Total Bookings</h2>
+            <img src="data:image/png;base64,{{ chart_bar }}" alt="Bar Chart: Total Amount Earned by Month">
+        </div>
+        
+        <!-- Optional: Pie Chart -->
+        <!--
+        <h2>Distribution of Earnings</h2>
+        <div class="chart">
+            <img src="data:image/png;base64,{{ chart_pie }}" alt="Pie Chart: Distribution of Earnings">
+        </div>
+        -->
+    </div>
+
+</body>
+</html>

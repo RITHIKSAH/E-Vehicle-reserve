@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirect</title>
+</head>
+<body>
+    <h2>Redirect</h2>
+    Hello, {{user.first_name}} {{user.last_name}}!<br>
+    Username: {{user.username}}<br>
+    <form method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <input type="submit" value="logout">
+    </form>
+    <form method="post" action="{% url 'pass_change' %}">
+        {% csrf_token %}
+        <input type="submit" value="change password">
+    </form>
+    <div><a href="{% url 'index' %}">Already have an account? Sign in</a></div>
+</body>
+</html>

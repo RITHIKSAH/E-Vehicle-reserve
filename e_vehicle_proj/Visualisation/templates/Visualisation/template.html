@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Report</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 20px; 
+            flex-wrap: wrap;
+        }
+        .chart {
+            width: 45%;
+            text-align: center;
+        }
+        .styled-table {
+            margin: 20px 0;
+            font-size: 16px;
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+        }
+        .styled-table thead tr {
+            background-color: #343a40;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .styled-table th, .styled-table td {
+        padding: 12px 15px;
+        border: 1px solid #dddddd;
+        }
+
+        .styled-table tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+        .styled-table tbody tr:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+        .styled-table tbody tr:last-of-type {
+            border-bottom: 2px solid #343a40;
+        }
+        .styled-table tbody tr:hover {
+            background-color: #d6e9f8;
+        }
+        .table-title {
+            color: #343a40;
+            font-size: 24px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .report-title {
+            text-align: center;
+            color: #080808;
+            background-color: #d2a821;
+            padding: 20px;
+            font-size: 36px;
+            margin: 20px 0 80px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- head -->
+    <h1 class="report-title"><a href="{% url 'index' %}">Back</a>&nbsp;&nbsp;E-Vehicle Share System Report</h1>
+
+    <!-- 1st row -->
+    <div class="chart-container">
+        <div class="chart">
+            <h2>Amount Earned (&pound;) per Day</h2>
+            <img src="data:image/png;base64,{{ chart_line }}" alt="Line Chart: Amount Earned per Day">
+        </div>
+        
+        <div class="chart">
+            <h2>Total Bookings per Day</h2>
+            <img src="data:image/png;base64,{{ chart_bar }}" alt="Bar Chart: Total Bookings">
+        </div> 
+    </div><br><br>
+
+    <!-- 2nd row -->
+    <div class="chart-container">
+        <div class="chart">
+            <h2>Bookings by Model (%)</h2>
+            <img src="data:image/png;base64,{{ chart_pie }}" alt="Pie Chart of Vehicle Bookings" style="max-width: 100%;">
+        </div>
+
+        <div class="chart">
+            <h2>Bookings by Vehicle Type (%)</h2>
+            <img src="data:image/png;base64,{{ chart_pie_vehicle_type }}" alt="Vehicle Type Pie Chart">
+        </div>
+    </div>
+
+    <!-- 3rd row -->
+    <div class="chart-container">
+        <div class="chart">
+            <h2>Battery Percentage by Vehicle Model and Home Location (<= 80%)</h2><br>
+            <img src="data:image/png;base64,{{ chart_bar_battery }}" alt="Battery Capacity by Vehicle Model and Home Location" style="max-width: 100%;">
+        </div>
+        <div class="chart">
+            <h2>Defective Vehicles in the system</h2>
+            <img src="data:image/png;base64,{{ chart_speedometer }}" alt="Speedometer Chart">
+            <h2 class="table-title">List of Defective Vehicles</h2>
+            <div class="table-responsive" style="text-align: right;">
+                {{ defective_vehicles_table|safe }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

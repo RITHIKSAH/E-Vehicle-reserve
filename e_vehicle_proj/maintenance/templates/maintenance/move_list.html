@@ -1,0 +1,117 @@
+{% load static %} <!-- Load static files -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move</title>
+    {% load static %}
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+    <script>
+        var vehicle_icon = {
+            url: "{% static 'img/e_vehicle_icon.png' %}",
+            scaledSize: new google.maps.Size(32, 32),
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(16, 32)
+        };
+        var home_icon = {
+            url: "{% static 'img/home.png' %}",
+            scaledSize: new google.maps.Size(32, 32),
+            origin: new google.maps.Point(0, 0),
+            anchor: new google.maps.Point(16, 32)
+        };
+
+        function initMap(center_lat, center_lng, show_center_marker, start, end) {
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat: center_lat, lng: center_lng}, // Set initial center of the map
+                zoom: 15
+            });
+            if(show_center_marker)
+                var user_locatiion_marker = new google.maps.Marker({
+                    position: {lat: center_lat, lng: center_lng},
+                    map: map
+                });
+
+            // Loop through the vehicles and add markers
+            var jsvehicles = {{ jsvehicles|safe }}; // Passing the vehicles data to JavaScript
+
+            jsvehicles.slice(start, end).forEach(function(vehicle) {
+                var vehicle_marker = new google.maps.Marker({
+                    position: {lat: parseFloat(vehicle.vehicle_location.lat), lng: parseFloat(vehicle.vehicle_location.long)},
+                    map: map,
+                    icon: vehicle_icon,
+                    title: 'Vehicle No.' + vehicle.vehicle_id + ' ' + vehicle.vehicle_details.model + ' ' + vehicle.vehicle_details.make + ' (' + vehicle.vehicle_details.year + ')'
+                });
+                var home_marker = new google.maps.Marker({
+                    position: {lat: parseFloat(vehicle.home_location.lat), lng: parseFloat(vehicle.home_location.long)},
+                    map: map,
+                    icon: home_icon,
+                    title: vehicle.home_details.name + ' (' + vehicle.home_details.address + ')'
+                });
+                var repair_path = new google.maps.Polyline({
+                    path: [vehicle_marker.position, home_marker.position],
+                    geodesic: true,
+                    strokeColor: "#FF0000",
+                    strokeOpacity: 1.0,
+                    strokeWeight: 2,
+                });
+                repair_path.setMap(map);
+            })
+        }
+        function onload(){
+            var searchParams = new URLSearchParams(window.location.search);
+            var page = searchParams.get('page');
+            var paginate_by = 10;
+            page = page==null ? 1 : page;
+            var start = (page - 1) * paginate_by;
+            var end = page * paginate_by;
+            navigator.geolocation.getCurrentPosition(function(location){
+                initMap(location.coords.latitude, location.coords.longitude, true, start, end)
+            },function(err){
+                initMap(55.871799, -4.288332, false, start, end)
+            }); 
+        }
+    </script>
+</head>
+<body onload="onload()">
+    <h2>Repair</h2>
+    <div id="map" style="height: 500px; width: 100%; border: 1px solid black;"></div>
+    <table>
+        <tr>
+            <th>Vehicle ID</th>
+            <th>Vehicle Type</th>
+            <th>Vehicle Details</th>
+            <th>Vehicle Location</th>
+            <th>Home Location</th>
+            <th>Move</th>
+        </tr>
+        {% for vehicle in page_obj %}
+        <tr>
+            <td>{{ vehicle.vehicle_id }}</td>
+            <td>{{ vehicle.vehicle_type }}</td>
+            <td>{{ vehicle.model }} {{ vehicle.make }} ({{ vehicle.year }})</td>
+            <td>{{ vehicle.location_lat }} {{ vehicle.location_long}}</td>
+            <td>{{ vehicle.home_location }}</td>
+            <td><form action="{% url 'move_done' %}" method="post">{% csrf_token %}<input type="hidden" name="vehicle_id" value="{{ vehicle.vehicle_id }}"><button type="submit">Done</button></form></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+    
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</body>
+</html>

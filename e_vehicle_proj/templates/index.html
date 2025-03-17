@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Tire NewLife</title>
+
+        {% load static %}
+
+        <link rel="icon" href="{% static 'images/logo_tab.png' %}" type="image/x-icon">
+        <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css">
+        <style>
+          #userLoginNotice{
+            font-size: 36px;
+            margin-top: 70px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9); /* 添加文本阴影 */
+          }
+          .navbar{
+            background-color: rgba(0, 0, 0, 0) !important; /* 设置透明背景颜色 */
+            background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.0)); /* 渐变效果 */
+            border-bottom: none;
+            width: 100%; /* 宽度 100% */
+            height: 150px;
+            font-size: 18px;
+            transition: height 0.5s ease, font-size 0.5s ease;
+          }
+          .navbar.heightDecrease {
+            font-size: 17.8px;
+            height: 70px; /* 滚动后高度 */
+          }
+          .navbar.interWithCardContainer{
+            background-color: rgba(255, 255, 255, 1.0) !important; /* 设置透明背景颜色 */
+            background: none;
+            border-bottom:  2px solid #000;
+          }
+          .navbar-toggler-icon {
+            background-color: rgb(255, 255, 255); /* 将背景颜色设置为白色 */
+          }
+          .nav-icon {
+            width: 120px !important; /* 设置图标的宽度 */
+            vertical-align: middle; /* 使图标与文本垂直居中对齐 */
+            margin-right: 500px;
+          }
+          .nav-link {
+            margin-right: 20px; /* 每个链接右侧的间距 */
+            color: white; /* 导航链接颜色 */
+          }
+          .nav-link:hover,
+          .nav-link:focus{
+            font-size: 20px;
+            font-weight: bold; /* 设置标题粗细 */
+            color: rgb(72, 255, 0); /* 导航链接颜色 */
+          }
+          .nav-link.scrolled {
+            color: rgb(0, 0, 0); /* 设置字体颜色 */
+          }
+          .titleImage_container{
+            width: 100%;
+            height: 100vh;
+            padding-left: 0;
+            padding-right: 0;
+          }
+          .titleImage_container img{
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+
+          }
+          .carousel-caption{
+            top: 37%; /* 距离顶部10% */
+            left: 50%; /* 水平居中 */
+            transform: translateX(-50%); /* 使其在水平上居中 */
+            color: white; /* 字体颜色 */
+          }
+          .carousel-caption h5 {
+            white-space: nowrap;
+            font-family: 'Roboto', sans-serif; /* 设置标题字体 */
+            font-size: 4rem; /* 设置标题字体大小 */
+            font-weight: bold; /* 设置标题粗细 */
+          }
+          .carousel-caption .btn{
+            color: rgb(0, 0, 0); /* 自定义文本颜色 */
+            background-color: #28a745; /* 自定义背景颜色 */
+            border-radius: 25px; /* 设置圆角，值越大，圆角越圆 */
+            margin-top: 60px;
+          }
+          .carousel-caption .btn:hover{
+            color: white; /* 自定义文本颜色 */
+            background-color: #000000; /* 自定义背景颜色 */
+          }
+          .card_container{
+            height:900px;
+          }
+          .custom-title {
+            margin-top: 150px; /* 根据需要调整数值 */
+          }
+          .footer-link{
+            text-decoration: none;
+            color: rgb(104, 104, 104);
+            transition: color 0.2s;
+          }
+          .footer-link:hover{
+            color: white;
+          }
+          .list-inline-item {
+            margin-right: 200px; 
+          }
+          .dropdown-menu {
+            background-color: rgba(0, 0, 0, 0.4); /* 轻微透明的白色背景 */
+            backdrop-filter: blur(10px); /* 设置模糊效果，数值越大越模糊 */
+            border: none; /* 去掉边框 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 可选：添加轻微阴影 */
+          }
+          .dropdown-item {
+            color: white;
+            font-size: 15px;
+          }
+          .dropdown-item:hover {
+            background-color: #007bff00; /* 将颜色换成你想要的背景颜色 */
+            color:  rgb(72, 255, 0); /* 设置文本颜色 */
+          }
+          .nav-link.dropdown-toggle:focus,
+          .nav-link.dropdown-toggle:active {
+            color: rgb(72, 255, 0); /* 点击后的文字颜色 */
+          }
+        </style>
+    </head>
+
+    <body>
+      <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+        <div class="container">
+          <a class="nav-link" href="#">
+            <img id="logo" src="{% static 'images/tire_logo_white.png' %}"  class="nav-icon"> 
+          </a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+              <!-- <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="{% url 'index' %}">Home</a>
+              </li> -->
+              <li class="nav-item">
+                <a class="nav-link" href="#">About Us</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Pricing</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#">Help</a>  
+              </li>
+              {% if not user_authenticated %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'login' %}">Log In</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'register' %}">Sign Up</a>
+                </li>
+              {% else %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">Portal</a>
+                  <ul class="dropdown-menu">
+                    {% if is_customer %}
+                      <li><a class="dropdown-item" href="{% url 'history' %}">My Invoice</a></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{% url 'pass_change' %}">Change Password</a></li>
+                  </ul>
+                </li>
+                <form method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <input id="logoutinput" class="btn btn-outline-light" type="submit" value="Logout" style="margin-top: 5px; margin-left: 10px;">
+                </form>
+                <button id="changepass" onclick="window.location.href='{% url 'pass_change' %}'" class="btn btn-outline-light" type="button" style="margin-top: 5px; margin-left: 10px;">Change Pass</button>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <!-- 使用.container容器 -->
+      <div class="container-fluid titleImage_container">
+        <div id="carouselTitleImagesFade" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-touch="false">
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#carouselTitleImagesFade" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#carouselTitleImagesFade" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#carouselTitleImagesFade" data-bs-slide-to="2" aria-label="Slide 3"></button>
+          </div>
+          <div class="carousel-inner">
+            <div class="carousel-item active" data-bs-interval="5000">
+              <img src="{% static 'images/life.jpg' %}" class="d-block w-100" alt="...">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>HELLO  ,  LIFE</h5>
+                {% if user_authenticated %}
+                  {% if is_operator %}
+                    <a href="{% url 'tracking' %}" class="btn btn-light btn-lg">Operator Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[operator]{{ request.user.username }}</h3>
+                  {% elif is_manager %}
+                    <a href="{% url 'earnings_chart' %}" class="btn btn-light btn-lg">Manager Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[manager]{{ request.user.username }}</h3>
+                  {% elif is_customer %}
+                    <a href="{% url 'make_reservation' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，{{ request.user.username }}</h3>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'login' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                {% endif %}
+              </div>
+            </div>
+            <div class="carousel-item" data-bs-interval="5000">
+              <img src="{% static 'images/bike.jpg' %}" class="d-block w-100" alt="...">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>GREEN & HEALTH</h5>
+                {% if user_authenticated %}
+                  {% if is_operator %}
+                    <a href="{% url 'tracking' %}" class="btn btn-light btn-lg">Operator Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[operator]{{ request.user.username }}</h3>
+                  {% elif is_manager %}
+                    <a href="{% url 'earnings_chart' %}" class="btn btn-light btn-lg">Manager Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[manager]{{ request.user.username }}</h3>
+                  {% elif is_customer %}
+                    <a href="{% url 'make_reservation' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，{{ request.user.username }}</h3>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'login' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                {% endif %}
+              </div>
+            </div>
+            <div class="carousel-item" data-bs-interval="5000">
+              <img src="{% static 'images/car.jpg' %}" class="d-block w-100" alt="...">
+              <div class="carousel-caption d-none d-md-block">
+                <h5>ALWAYS RELIABLE</h5>
+                {% if user_authenticated %}
+                  {% if is_operator %}
+                    <a href="{% url 'tracking' %}" class="btn btn-light btn-lg">Operator Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[operator]{{ request.user.username }}</h3>
+                  {% elif is_manager %}
+                    <a href="{% url 'earnings_chart' %}" class="btn btn-light btn-lg">Manager Gate</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，[manager]{{ request.user.username }}</h3>
+                  {% elif is_customer %}
+                    <a href="{% url 'make_reservation' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                    <h3 id="userLoginNotice">Welcome，{{ request.user.username }}</h3>
+                  {% endif %}
+                {% else %}
+                  <a href="{% url 'login' %}" class="btn btn-light btn-lg">Start Your Trip</a> <!-- 添加按钮 -->
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container mt-5 card_container">
+        <h1 class="text-center mb-5 custom-title"><strong>How to Tire</h1> <!-- 标题 -->
+        <div class="row">
+          <div class="col">
+            <div class="card shadow-lg" >
+              <img src="{% static 'images/card_login.png' %}" class="card-img-top" alt="Card login" style="height: 400px;">
+              <div class="card-body">
+                <h5 class="card-title">LOG IN</h5>
+                <h6 class="card-subtitle mb-2 text-body-secondary">Step 1</h6>
+                <p class="card-text">Click the log in button to log in or Click the sign up button to sign up.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card shadow-lg">
+              <img src="{% static 'images/card_map.png' %}" class="card-img-top" alt="Card map" style="height: 400px;">
+              <div class="card-body">
+                <h5 class="card-title">GET A VEHICLE</h5>
+                <h6 class="card-subtitle mb-2 text-body-secondary">Step 2</h6>
+                <p class="card-text">Select a vehicle and make sure the vehicle you choose is ok, and then start your trip.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card shadow-lg">
+              <img src="{% static 'images/card_drive.jpg' %}" class="card-img-top" alt="Card go" style="height: 400px;">
+              <div class="card-body">
+                <h5 class="card-title">ENJOY YOUR TRIP</h5>
+                <h6 class="card-subtitle mb-2 text-body-secondary">Step 3</h6>
+                <p class="card-text">Our system will automatically bill you and you just need to enjoy your trip!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="footer">
+        <div class="container-fluid" style="width: 100%; background-color: black; color: white;height: 750px">
+          <div class="container " style="width: 100%; background-color: black; color: white;height: 750px">
+            <div class="row">
+              <div class="col-md-3" style="margin-top: 150px; margin-left: 250px;">
+                <h3 style="margin-bottom: 50px;">About</h3>
+                <ul class="list-unstyled">
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Home</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Electric Bike</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Electric Car</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Electric Scooter</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Safety</a></li>
+              </ul>
+              </div>
+              <div class="col-md-3" style="margin-top: 150px;">
+                <h3 style="margin-bottom: 50px;">Links</h3>
+                <ul class="list-unstyled">
+                    <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Privacy Policy</a></li>
+                    <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Terms of Service</a></li>
+                    <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Contact Us</a></li>
+                </ul>
+              </div>
+              <div class="col-md-3" style="margin-top: 150px; ">
+                <h3 style="margin-bottom: 50px;">Follow Us</h3>
+                <ul class="list-unstyled">
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Privacy Policy</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Terms of Service</a></li>
+                  <li style="margin-bottom: 25px;"><a href="#" class="footer-link">Contact Us</a></li>
+                </ul>
+              </div>
+            </div>
+            <ul class="list-inline" style="margin-top: 210px; margin-left: 250px; font-size: 14px;">
+              <li class="list-inline-item"><p>Copyright &copy; 2024 Tire. All rights reserved.</p></li>
+              <li class="list-inline-item ms-5"><a href="#" class="footer-link">Privacy Policy</a></li>
+              <li class="list-inline-item ms-5"><a href="#" class="footer-link">Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+      </footer>
+      <script>
+        window.addEventListener('scroll', function() {
+          const navbar = document.querySelector('.navbar');
+          const navLinks = document.querySelectorAll('.nav-link');
+          const cardContainer = document.querySelector('.card_container');
+          const cardContainerTop = cardContainer.getBoundingClientRect().top;
+          const logo = document.getElementById('logo'); // 选择图像元素
+          myinvoiceButton = document.getElementById('myinvoice');
+          logoutButton = document.getElementById('logoutinput');
+          changePasswordButton = document.getElementById('changepass');
+          if (window.scrollY > 50) { // 滚动超过50px时
+              navbar.classList.add('heightDecrease'); // 添加类名以改变导航栏高度
+          } else {
+              navbar.classList.remove('heightDecrease'); // 移除类名以恢复
+          }
+          if (cardContainerTop < navbar.offsetHeight) {
+              navLinks.forEach(link => {
+                link.classList.add('scrolled'); // 为每个链接添加 scrolled 类
+              });
+              navbar.classList.add('interWithCardContainer');
+              logo.src = "{% static 'images/tire_logo_black.png' %}"; // 更改图像为黑色版本
+              logoutButton.classList.remove('btn-outline-light');
+              logoutButton.classList.add('btn-outline-dark');
+              myinvoiceButton.classList.remove('btn-outline-light');  
+              myinvoiceButton.classList.add('btn-outline-dark');  
+              changePasswordButton.classList.remove('btn-outline-light');
+              changePasswordButton.classList.add('btn-outline-dark');   
+          } 
+          else {
+              navLinks.forEach(link => {
+                link.classList.remove('scrolled'); // 移除 scrolled 类
+              });
+              navbar.classList.remove('interWithCardContainer');
+              logo.src = "{% static 'images/tire_logo_white.png' %}"; // 恢复为白色版本
+              logoutButton.classList.remove('btn-outline-dark');
+              logoutButton.classList.add('btn-outline-light');
+              myinvoiceButton.classList.remove('btn-outline-dark');  // 移除原有的按钮样式
+              myinvoiceButton.classList.add('btn-outline-light');     // 添加新的按钮样式
+              changePasswordButton.classList.remove('btn-outline-dark');
+              changePasswordButton.classList.add('btn-outline-light'); 
+          }
+        });
+      </script>
+      
+      <!-- jQuery and JavaScript Bundle with Popper 这里引入的是本地js文件-->
+      <script src="{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
+    </body>
+</html>

@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tire-Information</title>
+      <link rel="icon" href="{% static 'images/logo_tab.png' %}" type="image/x-icon">
+      <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+      <style>
+        .top_section{
+          width: 100%;
+          height:100%;
+          min-height: 100px;
+          border: 1px solid black;
+          background-color: black;
+          color: white;
+        }
+        .bottom_section_left{
+          width: 15%;
+          height:85vh;
+          min-width: 150px;
+          border: 1px solid black;
+        }
+        .bottom_section_right{
+          width: 100%;
+          height:85vh;
+          border: 1px solid black;
+        }
+        .custom-btn {
+          background-color: rgb(0, 0, 0);   /* 默认背景为白色 */
+          color: rgb(255, 255, 255);              /* 默认文字颜色为黑色 */
+          border-color: rgb(255, 255, 255);       /* 默认边框为黑色 */
+        }
+
+        .custom-btn:hover {
+          background-color: rgb(255, 255, 255);   /* 悬停时背景变为黑色 */
+          color: rgb(0, 0, 0);              /* 悬停时文字变为白色 */
+          border-color: rgb(0, 0, 0);       /* 悬停时保持黑色边框 */
+        }
+      </style>
+    </head>
+
+    <body>
+        <div class="container-fluid">
+          <!-- 上半部分，横跨整个页面宽度 -->
+          <div class="row">
+            <div class="col top_section w-100 d-flex align-items-center">
+              <!-- Profile Image -->
+              <img src="{% static 'images/profileimg.jpg' %}" alt="Profile Image" class="rounded-circle" style="margin-left: 5vw;" width="100vw" height="100vw">
+              
+              <!-- User Info -->
+              <div style="margin-left: 2vw; margin-top: 2vh;">
+                <h1 style="font-size: 1.5vw; ">{{ user.username }} [UID:{{user.id}}]</h1>
+                <p style="font-size: 1.2vw;">{{ user.email }}</p>
+              </div>
+              
+              <!-- Balance and Log Out button -->
+              <div class="d-flex align-items-center" style="margin-left: auto;">
+                <h1 style="font-size: 1.5vw;">Balance:</h1>
+                <h4 style="margin-right: 10vw; font-size: 1.2vw;"><strong>&pound;{{ user.balance }}</strong></h4>
+                <div class="input-group" style="width: 250px;margin-right: 5vw;">
+                  <span class="input-group-text"><strong>&pound;</strong></span>
+                  <input type="number" id="rechageInput" step="0.01" class="form-control" aria-label="Dollar amount (with dot and two decimal places)">
+                  <button tyep="button" onclick="recharge()" class="btn btn-outline-light">Recharge</button>
+                </div>
+                <button style="margin-right: 10vw; height:auto; font-size: 1.2vw;" type="button" class="btn btn-outline-danger btn-lg">Log Out</button>
+              </div>
+            </div>
+          </div>
+        
+          <!-- 下半部分，分为左右两部分 -->
+          <div class="row">
+            <!-- 左边部分 -->
+            <div class="col-md-6 bottom_section_left text-center" style="font-size: 21px;min-width: 250px;">
+              <nav class="nav flex-column" style="margin-top: 200px;">
+                <!-- 使用 flex 类来确保按钮水平居中 -->
+                <a href="{% url 'payment' %}" type="button" class="btn btn-outline-dark mt=5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>Payment</strong></a> 
+                <a href="{% url 'history' %}" class="btn btn-outline-dark mt-5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>History</strong></a>
+                <a href="{% url 'inprogress' %}" class="btn btn-outline-dark mt-5 custom-btn" style="font-size: 26px; width: 150px; margin-left: auto; margin-right: auto;"><strong>Back</strong></a>
+                <img src="{% static 'images/tire_logo_black.png' %}" alt="Brand Image" 
+                     style="margin-top: 15vh; display: block; margin-left: auto; margin-right: auto; width: 200px; height: auto;">
+              </nav>
+            </div>
+            
+            <!-- 右边部分 -->
+            <div class="col bottom_section_right text-black p-4" id="contentArea" style="background-color: rgba(119, 119, 119, 0.438);">
+              <div style="display: flex; justify-content: center; align-items: center; ">
+                <h1 style="margin-right: 60px;">History</h1>
+                <div class="input-group" style="width: 300px;">
+                  <span class="input-group-text" id="basic-addon1">🐧</span>
+                  <input id="searchInput" type="text" class="form-control" placeholder="Find a Invoice(≧◡≦)" aria-label="Username" aria-describedby="basic-addon1">
+                </div>
+              </div>
+            <div class="overflow-auto" style="height: 95%;; width: 100%"> <!-- 设置最大高度 -->
+              <div class="row">
+                <div class="row row-cols-1 row-cols-md-1">
+                  {% for obj in invoiceset %}
+                  <div class="col">
+                      <div class="card shadow-lg" style="height: 200px;background-color: rgba(102, 139, 0, 0.226); backdrop-filter: blur(10px);border: none;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                          <div class="card-body">
+                              <h5 class="card-title position-absolute" style="bottom: 10px; left: 80px; font-size: 16px;">Invoice ID: {{ obj.invoice_id }}</h5>
+                              <p class="card-text position-absolute" style="top: 30px; left: 80px;font-size: 30px;"><strong>{{ obj.user.username }}</strong></p>
+                              <p class="card-num position-absolute" style="top: 40px; right: 80px;font-size: 36px;"><strong>&pound;{{ obj.amount }}</strong></p>
+                              <p class="card-createdate position-absolute" style="bottom: 70px; left: 80px;font-size: 18px;">Created at: {{ obj.created_at }}</p>
+                              <p class="card-paiddate position-absolute" style="bottom: 32px; left: 80px;font-size: 18px;">Paid at: {{ obj.paid_at }}</p>
+                              <a href="{% url 'historyDetail' invoice_id=obj.invoice_id %}" class="btn btn-outline-dark position-absolute" style="bottom: 30px; right: 80px;">View Details</a>
+                          </div>
+                      </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>  
+              
+            </div>
+          </div>
+        </div>
+      
+      <script>
+
+        function recharge(){
+          const amount = document.getElementById('rechageInput').valueAsNumber;
+          if (!isNaN(amount)){
+            fetch(`recharge/?amount=${amount}`)
+            .then(response => {
+                if (response.ok) {
+                    console.log("充值成功！");
+                    window.location.reload();
+                } else {
+                    console.error('操作失败:', response.status);  // 处理错误
+                }
+            })
+            .catch(error => {
+                console.error('请求失败:', error);  // 处理网络错误
+                
+            });
+          }
+          else{
+            console.log("没有输入充值金额");
+          }
+        }
+        // 监听输入框内容变化
+        document.getElementById('searchInput').addEventListener('input', function() {
+          var searchTerm = String(searchInput.value.toLowerCase());  // 获取输入的搜索词并转为小写
+          document.querySelectorAll('.card').forEach(function(card) {
+            // 获取每个卡片的文本内容
+            var keyword1 = String(card.querySelector('.card-title').textContent.toLowerCase());
+            var keyword2 = String(card.querySelector('.card-num').textContent.toLowerCase());
+            var keyword3 = String(card.querySelector('.card-createdate').textContent.toLowerCase());
+            var keyword4 = String(card.querySelector('.card-paiddate').textContent.toLowerCase());
+
+            // 如果任何一个字段包含搜索词，则显示该卡片，否则隐藏
+            if (keyword1.includes(searchTerm) || keyword2.includes(searchTerm) || keyword3.includes(searchTerm) || keyword4.includes(searchTerm)) {
+              card.style.display = '';  // 显示卡片
+            } else {
+              card.style.display = 'none';  // 隐藏卡片
+            }
+          });
+        });
+
+      </script>
+        
+      <!-- jQuery and JavaScript Bundle with Popper 这里引入的是本地js文件-->
+      <script src="{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
+
+    </body>
+</html>

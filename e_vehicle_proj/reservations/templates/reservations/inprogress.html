@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tire Reservation</title>
+      <link rel="icon" href="{% static 'images/logo_tab.png' %}" type="image/x-icon">
+      <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css">
+      <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}" async defer></script>
+  
+      <style>
+        .overlay {
+          position: fixed; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
+          bottom: 0; 
+          background: rgba(0, 0, 0, 0.1); 
+          z-index: 999; 
+        }
+        .section_top{
+          color: white;
+          background-color: black;
+          width: 100%;
+          height:7%;
+          min-height: 50px;
+          border: 1px solid black;
+        }
+        .section_mid_top{
+          width: 100%;
+          height:65%;
+          min-height: 400px;
+          border: 1px solid black;
+        }
+        .section_mid_bottom{
+          width: 100%;
+          height:3%;
+          border: 1px solid black;
+          min-height: 30px;
+          background-color: rgb(37, 37, 37);
+        }
+        .section_bottom{
+          width: 100%;
+          height:25%;
+          min-height: 200px;
+        }
+        .centered-input {
+          text-align: center; /* 将输入文本居中 */
+        }
+        #batteryInfo {
+          position: relative;
+          width: 50%;
+          max-width: 140px;
+          margin: auto;
+        }
+        .battery-text {
+          position: absolute;
+          top: 65%;
+          left: 52%;
+          transform: translate(-50%, -50%);
+          color: black; /* 根据背景颜色设置 */
+          font-weight: bold;
+          font-size: 1.2em;
+          z-index: 2; /* 确保文字在填充层之上 */
+        }
+        .battery {
+          width: 100%;
+          height: 70%; 
+          padding-bottom: 130%; /* 保持电池的宽高比 */
+          box-sizing: border-box;
+          border-radius: 15% 15% 5% 5%;
+          filter: drop-shadow(0 1px 3px rgba(0,0,0,0.22));
+          background: #e2e2e2;
+          position: relative;
+          z-index: 1;
+            
+          &::before {
+            content: "";
+            position: absolute;
+            width: 30%;
+            height: 8%;
+            left: 50%;
+            top: -8%;
+            transform: translateX(-50%);
+            border-radius: 50% 50% 0 0;
+            background: rgba(197, 197, 197, 0.88);
+          }
+            
+          &::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: var(--battery-top, 100%);
+            background: linear-gradient(to bottom, #7abcff 0%, #00BCD4 44%, #2196F3 100%);
+            border-radius: 10% 10% 5% 5%;
+            box-shadow: 0 14px 28px rgba(33, 150, 243, 0), 0 10px 10px rgba(9, 188, 215, 0.08);
+            animation: charging var(--animation-duration) linear, flow 2s infinite linear;
+            filter: hue-rotate(180deg);
+          }
+        }
+        
+        @keyframes charging {
+          0% {
+            top: 100%;
+            filter: hue-rotate(0deg);
+            box-shadow: 0 14px 28px rgba(33, 150, 243, 0.4), 0 10px 10px rgba(9, 188, 215, 0.2);
+          }
+        }
+        #lightling{
+          position: absolute;
+          top: 40%; /* 垂直居中 */
+          left: 50%; /* 水平居中 */
+          transform: translate(-50%, -50%); /* 使元素的中心点与其父元素的中心对齐 */
+          animation: flash 3s infinite; /* 应用动画 */
+          z-index: 1;
+        }
+
+        @keyframes flow {
+          0% {
+              background-position: 0% 50%;
+          }
+          100% {
+              background-position: 100% 50%;
+          }
+        }
+
+        @keyframes flash {
+          0%, 100% {
+              transform: translate(-50%, -50%) scale(2); /* 初始大小 */
+          }
+          50% {
+              transform: translate(-50%, -50%) scale(3.5); /* 中间增大 */
+          }
+}
+      </style>
+    </head>
+
+    <body onload="initMap()">
+      <div class="vh-100">
+        <div class="overlay" style="display: none;"></div>
+        <div class="container-fluid section_top d-flex justify-content-center align-items-center text-center p-0">
+          <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+              <img src="{% static 'images/tire_logo_white.png' %}" alt="Brand Image" style=" display: 'block'; width: 100px; height: auto;">
+              <h1>Inprogress</h1>
+              <div>
+                <a style="width: 120px;"href="{% url 'history' %}" class="btn btn-outline-light">My Invoice</a>
+                <a style="width: 120px;" href="{% url 'index' %}" class="btn btn-outline-light">Back</a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input class="btn btn-outline-danger" type="submit" value="Log Out">
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="container-fluid section_mid_top p-0">
+          <div class="alert alert-success" style="position: fixed;display: none;z-index: 1050;" role="alert">
+            <h4 class="alert-heading">Report Defective Vehicle Successful</h4>
+            <p>Thank you for your help. Refresh in <span id="successcountdown"></span> s</p>
+          </div>
+          <div class="alert alert-danger" style="position: fixed;display: none;z-index: 1050;" role="alert">
+            <h4 class="alert-heading">Report Defective Vehicle Failed</h4>
+            <span id="failnotice">Some Errors occurred, please contact to the operator.</span><span>Refresh in </span><span id="failcountdown"></span><span> s</span>
+          </div>
+          <div id="nopowernotice" class="alert alert-danger" style="position: fixed;display: none;z-index: 1050;" role="alert">
+            <h4 class="alert-heading">No Enough Power To The Destination </h4>
+            <span>You can return car immediately or use up the rest of your power and then click report defective, and then return.</span><span>Refresh in </span><span id="nopowercountdown"></span><span> s</span>
+          </div>
+          <div id="map" style="height: 100%; width: 100%;"></div>
+        </div>
+        <div class="container-fluid section_mid_bottom d-flex justify-content-center align-items-center text-center p-0"> 
+          <div id="alertContainer" class="container" style="position: fixed; top:50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; display: none; width: 500px"></div>
+        </div>
+        <div class="container section_bottom d-flex justify-content-center align-items-center text-center p-0" style="display: flex; align-items: flex-end">
+          <div class="container" id="batteryInfo" style="height: 80%; width: 15%;">
+            <div class="battery">
+              <div class="battery-text">0%</div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-lightning-charge" viewBox="0 0 16 16" id="lightling">
+                <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09zM4.157 8.5H7a.5.5 0 0 1 .478.647L6.11 13.59l5.732-6.09H9a.5.5 0 0 1-.478-.647L9.89 2.41z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="container d-flex align-items-center justify-content-center" id="vehicleInfo" style="height: 80%; width: 85%;">
+            <div class="row w-100"> <!-- 使用 g-3 添加间距 -->
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Model</strong></h5>
+                      <p>{{user_base_reservationIns.vehicle.model}}</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>VID</strong></h5>
+                      <p>{{user_base_reservationIns.vehicle.vehicle_id}}</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Make</strong></h5>
+                      <p>{{user_base_reservationIns.vehicle.make}}</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Year</strong></h5>
+                      <p>{{user_base_reservationIns.vehicle.year}}</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Price</strong></h5>
+                      <p><strong>&pound;</strong>{{user_base_reservationIns.vehicle.vehicle_type.cost_ph}}/H</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Status</strong></h5>
+                      <p>{{ user_base_reservationIns.vehicle.is_rented|yesno:"Rented,Idle" }}</p>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Type</strong></h5>
+                      {% if "{{user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id}}" == "1" %}
+                        <p>E-Car</p>
+                      {% elif "{{user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id}}" == "2" %}
+                        <p>E-Scooter</p>
+                      {% else %}
+                        <p>E-Bike</p>
+                      {% endif %}
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="p-2 border flex-column" style="height: 70%; background-color: #bcddff; align-items: center; justify-content: center;">
+                      <h5 style="margin: 0;"><strong>Location</strong></h5>
+                      <p style="margin: 0;" id="rentedVehicleLocation">{{user_base_reservationIns.vehicle.location_lat}},{{user_base_reservationIns.vehicle.location_long}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+              {% if user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id == 1 %}
+                <img src="{% static 'img/e_car.png' %}" alt="..." style="width: 90px; height: 64px; margin-left: 107px; margin-top: 15px;margin-bottom: 5px;">             
+              {% elif user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id == 2 %}
+                <img src="{% static 'img/e_scooter.png' %}" alt="..." style="width: 90px; height: 64px; margin-left: 107px; margin-top: 15px;margin-bottom: 5px;">
+              {% elif user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id == 3 %}
+                <img src="{% static 'img/e_bike.png' %}" alt="..." style="width: 90px; height: 64px; margin-left: 107px; margin-top: 15px;margin-bottom: 5px;">
+              {% endif %}
+              <button onclick="returnRentedVehicle('outside',-1)" type="button" class="btn btn-outline-dark " style="margin-left: 30px; margin-bottom: 10px; max-width: 250px;" >Return</button>
+              <button onclick="reportDefectiveVehicle()" type="button" class="btn btn-outline-dark " style="margin-left: 30px; margin-bottom: 55px;max-width: 250px;" >Report Defective</button>
+            </div>
+          </div>
+      </div>
+    </div>
+          
+      <script>
+
+        let map;
+        let intervalId; // 定时器ID
+        let clickPosition; // 目标位置
+        let isFetching = false;
+        let markerRentVehicle;
+        const updateInterval = 1000; // 更新间隔（毫秒）
+        const moveStep = 0.01; // 每次更新的步长
+        let batteryConsumInterval = 0;
+
+        initialPage();
+
+        function lockPage() {
+          document.body.classList.add('locked');
+          document.querySelector('.overlay').style.display = 'block'; // 显示覆盖层
+        }
+
+        function unlockPage() {
+          document.body.classList.remove('locked');
+          document.querySelector('.overlay').style.display = 'none'; // 隐藏覆盖层
+        }
+
+        function initMap() {
+          map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 55.871, lng: -4.29997}, // Set initial center of the map
+            zoom: 10,
+            gestureHandling: `greedy`,
+          });
+
+          map.addListener('click', (event) => {
+            clickPosition = event.latLng;
+            console.log("选取的终点坐标：" + clickPosition.lat()+" , "+ clickPosition.lng());
+            startMoving("googlemap",clickPosition);
+          });
+
+          // Loop through the vehicles and add markers
+          var home_locations = {{ home_locations|safe }}; // Passing the vehicles data to JavaScript
+          let currentInfoWindow = null;
+
+          home_locations.forEach(function(home_locations) {
+
+            var iconHomeStation = {
+                url: "{% static 'img/e_home.png' %}",
+                scaledSize: new google.maps.Size(50, 55),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(16, 32)
+            };
+
+            var marker = new google.maps.Marker({
+                position: {lat: parseFloat(home_locations.location_lat), lng: parseFloat(home_locations.location_long)},
+                map: map,
+                icon: iconHomeStation
+            });
+
+            // Optionally, add an info window
+            var infowindow = new google.maps.InfoWindow({
+              content: `
+              <div>
+                  <h5><strong>${home_locations.name}</strong></h5><br>
+                  HID: ${home_locations.home_location_id}<br>
+                  Address: ${home_locations.address}<br>
+                  Total Capacity: ${home_locations.capacity}<br>
+                  <div style="text-align: center; margin-top:10px">
+                    <button onclick="getHomeLocation()" type="button" class="btn btn-outline-dark" id="returnHomeButton" data-HID="${home_locations.home_location_id}">Return At Home</button>
+                  </div>
+              </div>`
+            });
+
+            marker.addListener('click', function() {
+              if(currentInfoWindow){
+                currentInfoWindow.close();
+              }
+              infowindow.open(map, marker);
+              currentInfoWindow = infowindow;
+              
+            });
+          });
+
+          let iconRentedUrl;
+
+          if("{{user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id}}" === "1"){
+            iconRentedUrl = "{% static 'img/e_car.png' %}";
+          }
+          else if("{{user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id}}" === "2"){
+            iconRentedUrl = "{% static 'img/e_scooter.png' %}";
+          }
+          else if("{{user_base_reservationIns.vehicle.vehicle_type.vehicle_type_id}}" === "3"){
+            iconRentedUrl = "{% static 'img/e_bike.png' %}";
+          }
+          var iconRentedVehicle = {
+                url: iconRentedUrl,
+                scaledSize: new google.maps.Size(35, 35),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(8, 32)
+          };
+
+          markerRentVehicle = new google.maps.Marker({
+                position: {lat: parseFloat("{{user_base_reservationIns.vehicle.location_lat}}"), lng: parseFloat("{{user_base_reservationIns.vehicle.location_long}}")},
+                map: map,
+                icon: iconRentedVehicle
+          });
+
+          // Optionally, add an info window
+            var infowindowForRentVehicle = new google.maps.InfoWindow({
+              content: `
+              <div>
+                  <strong>{{user_base_reservationIns.vehicle.model}}</strong><br>
+                  VID: {{user_base_reservationIns.vehicle.vehicle_id}}<br>
+                  Make: {{user_base_reservationIns.vehicle.make}}<br>
+                  Year: {{user_base_reservationIns.vehicle.year}}<br>
+                  Status: {{ user_base_reservationIns.vehicle.is_rented|yesno:"Rented,Idle" }}<br>
+              </div>`,  
+            });
+
+            markerRentVehicle.addListener('click', function() {
+
+              if(currentInfoWindow){
+                currentInfoWindow.close();
+              }
+              infowindowForRentVehicle.open(map, markerRentVehicle);
+              currentInfoWindow = infowindowForRentVehicle;
+              
+            });
+
+        }
+
+        function getHomeLocation(){
+          const returnHomeButton = document.getElementById("returnHomeButton");
+          var hid = returnHomeButton.getAttribute("data-HID");
+          console.log(hid);
+          fetch(`get_Home_Location/?home_id=${hid}`)
+          .then(response => response.json())
+          .then(data => {
+              data.hid = hid;
+              console.log(data);
+              startMoving("home",data);
+          })
+          .catch(error => console.error('Error:', error));
+        } 
+
+        function initialPage(){
+          updateBatteryLevel("initial");
+        }
+
+        function startMoving(datafromwhere,targetPosition){
+          lockPage();
+          let refreshtime = 5;
+          if (intervalId) {
+              clearInterval(intervalId); // 清除之前的定时器
+          }
+          fetch(`get_RentedVehicle_Location/`)
+            .then(response => response.json())
+            .then(data => {
+              var initialLat = parseFloat(data.location_lat);
+              var initialLng = parseFloat(data.location_long);
+              console.log("起始坐标：" + initialLat+" , "+ initialLng);
+              // 计算位置差
+              if (datafromwhere=="googlemap"){
+                var latDiff = targetPosition.lat() - initialLat;
+                var lngDiff = targetPosition.lng() - initialLng;
+              }
+              else{
+                var latDiff = targetPosition.home_location_lat - initialLat;
+                var lngDiff = targetPosition.home_location_long - initialLng;
+              }
+              var totalDistance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff);
+
+              var steps = Math.floor(totalDistance / moveStep);
+              var batteryWillComsume = steps/5;
+              let stepCount = 0;
+              console.log(batteryWillComsume);
+              updateBatteryLevel().then(batteryLevel => {
+                console.log("获取到电量"+batteryLevel);
+                if (batteryLevel >= batteryWillComsume){
+                  // 定时器定期更新位置
+                  intervalId = setInterval(() => {
+                    if (!isFetching) {
+                      if (stepCount < steps) {
+                          var newPosition = {
+                              lat: initialLat + (latDiff / steps) * stepCount,
+                              lng: initialLng + (lngDiff / steps) * stepCount,
+                          };
+                          console.log(newPosition.lat,newPosition.lng)
+                          updatePositionInDatabase(0,newPosition.lat, newPosition.lng); // 更新位置到数据库
+                          stepCount++;
+                          batteryConsumInterval++;
+                          if(batteryConsumInterval == 5){
+                            batteryComsumption();
+                            batteryConsumInterval = 0;
+                          }
+                          else{
+                            var temp = batteryConsumInterval; 
+                            batteryConsumInterval = temp;
+                          }
+                      } else {
+                          console.log("停止了")
+                          clearInterval(intervalId); // 停止定时器
+                          if (datafromwhere=="googlemap"){
+                            updatePositionInDatabase(1,targetPosition.lat(),targetPosition.lng()); // 最后一次更新位置到数据库
+                            console.log("到达终点坐标：" + targetPosition.lat()+" , "+ targetPosition.lng());
+                            unlockPage();
+                          }
+                          else{
+                            updatePositionInDatabase(1,targetPosition.home_location_lat,targetPosition.home_location_long); // 最后一次更新位置到数据库
+                            console.log("到达终点坐标：" + targetPosition.home_location_lat+" , "+ targetPosition.home_location_long);
+                            returnRentedVehicle('home',targetPosition.hid);
+                          }
+                      }
+                    }
+                  }, updateInterval); // 每隔一段时间更新
+                }
+                else{
+                  unlockPage();
+                  const countdownElement = document.getElementById('nopowercountdown');
+                  countdownElement.textContent = refreshtime;
+                  document.getElementById('nopowernotice').style.display = 'block'; 
+                  const countdownInterval = setInterval(() => {
+                    if (refreshtime > 0) {
+                      refreshtime--;
+                      countdownElement.textContent = refreshtime;
+                    } else {
+                      clearInterval(countdownInterval);  // 停止倒计时
+                      document.getElementById('nopowernotice').style.display = 'none'; // 隐藏 alert 或者执行其他操作
+                    }
+                  }, 1000);
+                }
+              }).catch(error => {
+                console.error("Failed to fetch battery level:", error);
+              });
+            })
+            .catch(error => console.error('Error fetching new position:', error));
+        }
+
+        function updatePositionInDatabase(last,positionlat, positionlng) {
+          if (isFetching) return; // 如果请求正在进行，则不执行新的请求
+          isFetching = true; // 标记开始请求
+          var vehicleNewPositionlat = positionlat;
+          var vehicleNewPositionlng = positionlng;
+          fetch(`update_RentedVehicle_Location/?vehicleNewPositionlat=${vehicleNewPositionlat}&vehicleNewPositionlng=${vehicleNewPositionlng}`)
+          .then(response => {
+              if (response.ok) {
+                const locationElement = document.getElementById('rentedVehicleLocation');
+                locationElement.textContent = `${vehicleNewPositionlat.toFixed(4)}, ${vehicleNewPositionlng.toFixed(4)}`;
+                if(last==0){
+                  console.log('操作成功');  // 处理成功
+                  markerRentVehicle.setPosition(new google.maps.LatLng(vehicleNewPositionlat, vehicleNewPositionlng));
+                  map.setCenter(new google.maps.LatLng(vehicleNewPositionlat, vehicleNewPositionlng));
+                }
+                else{
+                  unlockPage();
+                  console.log('操作成功');  // 处理成功
+                  markerRentVehicle.setPosition(new google.maps.LatLng(vehicleNewPositionlat, vehicleNewPositionlng));
+                  map.setCenter(new google.maps.LatLng(vehicleNewPositionlat, vehicleNewPositionlng));
+                }
+              } else {
+                  console.error('操作失败:', response.status);  // 处理错误
+              }
+          })
+          .catch(error => {
+              console.error('请求失败:', error);  // 处理网络错误
+          })
+          .finally(() => {
+              isFetching = false; // 请求完成，允许下一次请求
+          });
+        }  
+
+        function batteryComsumption(){
+          fetch(`update_RentedVehicle_Capacity/`)
+          .then(response => {
+              if (response.ok) {
+                
+                  console.log('扣电操作成功');  // 处理成功
+                  updateBatteryLevel(); 
+                
+              } else {
+                  console.error('操作失败:', response.status);  // 处理错误
+              }
+          })
+          .catch(error => {
+              console.error('请求失败:', error);  // 处理网络错误
+          })
+        }
+
+        function updateBatteryLevel(status) {
+          return new Promise((resolve, reject) =>{
+            var batteryLevel;
+            // 使用 AJAX 请求电池电量数据
+            fetch(`get_RentedVehicle_Capacity/`)
+            .then(response => response.json())
+            .then(data => {
+                batteryLevel = data.rentedVehicleCapacity; // 假设返回的数据结构为 { battery_level: 50 }
+                console.log(batteryLevel);
+                // 更新电池填充的高度
+                const batteryElement = document.querySelector('.battery');
+                const batteryFillElement = batteryElement.querySelector('::after');
+                const batteryTextElement = document.querySelector('.battery-text');
+                const timePerPixel = 0.02; // 每个像素所需的时间（秒）
+                const totalTime = batteryLevel * timePerPixel; // 总动画时间（秒
+                var currentLevel = 0;
+                // 将电量百分比转换为电池填充高度
+                batteryElement.style.setProperty('--battery-top', `${100-batteryLevel}%`);
+                batteryElement.style.setProperty('--animation-duration', `${totalTime}s`);
+                if (status === "initial"){
+                  var interval = setInterval(function() {
+                  if (currentLevel < batteryLevel) {
+                    currentLevel++;
+                    batteryTextElement.textContent = currentLevel + '%';
+                  } else {
+                    clearInterval(interval);  // 电量达到 100% 时停止动画
+                  }
+                  }, (totalTime*1000.0)/batteryLevel);  // 每 100 毫秒增加 1%
+                }
+                else{
+                  batteryTextElement.textContent = batteryLevel + '%';
+                }
+                resolve(batteryLevel);
+            })
+            .catch(error =>{
+              console.error('Error fetching battery level:', error);
+              reject(error);
+            });
+          });
+        }
+
+        function returnRentedVehicle(fromwhere,homeid){
+          console.log("按下了归还");
+          console.log("homeid是"+homeid);
+          fetch(`returnRentedVehicle/?fromwhere=${fromwhere}&homeid=${homeid}`)
+          .then(response => {
+              if (response.ok) {
+                console.log("归还数据生成成功,还车成功！");
+                window.location.href = "{% url 'payment' %}";
+              } else {
+                  console.error('操作失败:', response.status);  // 处理错误
+              }
+          })
+          .catch(error => {
+              console.error('请求失败:', error);  // 处理网络错误
+          })
+        }
+
+        // Report defective logic
+        function reportDefectiveVehicle(){
+          document.querySelectorAll("button").forEach(button => {
+              button.disabled = true;
+          });
+          let refreshtime = 3;
+          vehicleId = {{user_base_reservationIns.vehicle.vehicle_id}};
+          console.log(vehicleId);
+          fetch(`report_defective/?vehicle_id=${vehicleId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.notice === "Success"){
+              const countdownElement = document.getElementById('successcountdown');
+              countdownElement.textContent = refreshtime;
+              document.querySelector('.alert-success').style.display = 'block'; 
+              const countdownInterval = setInterval(() => {
+                if (refreshtime > 0) {
+                  refreshtime--;
+                  countdownElement.textContent = refreshtime;
+                } else {
+                  clearInterval(countdownInterval);  // 停止倒计时
+                  document.querySelector('.alert-success').style.display = 'none'; // 隐藏 alert 或者执行其他操作
+                  window.location.reload();
+                }
+              }, 1000);
+            }
+            else if(data.notice === "Duplication"){
+              document.querySelectorAll("button").forEach(button => {
+                  button.disabled = false;
+              });
+              // 延时 3 秒后隐藏 alert
+              const countdownElement = document.getElementById('failcountdown');
+              const failNoticeElement = document.getElementById('failnotice');
+              failNoticeElement.textContent = "This Vehicle has been reported and status is unrepair. Please Contact to the Operator.";
+              countdownElement.textContent = refreshtime;
+              document.querySelector('.alert-danger').style.display = 'block';
+              const countdownInterval = setInterval(() => {
+                if (refreshtime > 0) {
+                  refreshtime--;
+                  countdownElement.textContent = refreshtime;
+                } else {
+                  clearInterval(countdownInterval);  // 停止倒计时
+                  document.querySelector('.alert-danger').style.display = 'none'; // 隐藏 alert 或者执行其他操作
+                }
+              }, 1000);
+            }
+            else{
+              document.querySelectorAll("button").forEach(button => {
+                  button.disabled = false;
+              });
+              // 延时 3 秒后隐藏 alert
+              const countdownElement = document.getElementById('failcountdown');
+              countdownElement.textContent = refreshtime;
+              document.querySelector('.alert-danger').style.display = 'block';
+              const countdownInterval = setInterval(() => {
+                if (refreshtime > 0) {
+                  refreshtime--;
+                  countdownElement.textContent = refreshtime;
+                } else {
+                  clearInterval(countdownInterval);  // 停止倒计时
+                  document.querySelector('.alert-danger').style.display = 'none'; // 隐藏 alert 或者执行其他操作
+                }
+              }, 1000);
+            }
+          })
+          .catch(error => {
+              console.error('请求失败:', error);  // 处理网络错误
+              document.querySelectorAll("button").forEach(button => {
+                  button.disabled = false;
+              });
+              // 延时 3 秒后隐藏 alert
+              const countdownElement = document.getElementById('failcountdown');
+              countdownElement.textContent = refreshtime;
+              document.querySelector('.alert-danger').style.display = 'block';
+              const countdownInterval = setInterval(() => {
+                if (refreshtime > 0) {
+                  refreshtime--;
+                  countdownElement.textContent = refreshtime;
+                } else {
+                  clearInterval(countdownInterval);  // 停止倒计时
+                  document.querySelector('.alert-danger').style.display = 'none'; // 隐藏 alert 或者执行其他操作
+                }
+              }, 1000);
+          });
+        }
+
+      </script>
+      <!-- jQuery and JavaScript Bundle with Popper 这里引入的是本地js文件-->
+      <script src="{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
+    </body>
+</html>

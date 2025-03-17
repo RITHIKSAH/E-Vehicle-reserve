@@ -1,0 +1,65 @@
+{% load static %} <!-- Load static files -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Map</title>
+    {% load static %}
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+    <script>
+        function initMapO(center_lat, center_lng) {
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat: center_lat, lng: center_lng}, // Set initial center of the map
+                zoom: 10
+            });
+
+            var user_locatiion_marker = new google.maps.Marker({
+                position: {lat: center_lat, lng: center_lng},
+                map: map
+            })
+
+            // Loop through the vehicles and add markers
+            var vehicles = {{ vehicles|safe }}; // Passing the vehicles data to JavaScript
+
+            vehicles.forEach(function(vehicle) {
+                var icon = {
+                    url: "{% static 'img/e_vehicle_icon.png' %}",
+                    scaledSize: new google.maps.Size(32, 32),
+                    origin: new google.maps.Point(0, 0),
+                    anchor: new google.maps.Point(16, 32)
+                };
+
+                var marker = new google.maps.Marker({
+                    position: {lat: parseFloat(vehicle.location_lat), lng: parseFloat(vehicle.location_long)},
+                    map: map,
+                    icon: icon,
+                    title: vehicle.model + ' ' + vehicle.make + ' (' + vehicle.year + ')'
+                });
+
+                // Optionally, add an info window
+                var infowindow = new google.maps.InfoWindow({
+                    content: '<div><strong>' + vehicle.model + '</strong><br>' +
+                         'Make: ' + vehicle.make + '<br>' +
+                         'Year: ' + vehicle.year + '<br>' +
+                         'Capacity: ' + vehicle.capacity + '</div>'
+                });
+
+                marker.addListener('click', function() {
+                    infowindow.open(map, marker);
+                });
+            });
+        }
+        function initMap(){
+            navigator.geolocation.getCurrentPosition(function(location){
+                initMapO(location.coords.latitude, location.coords.longitude)
+            }); 
+        }
+    </script>
+</head>
+<body onload="initMap()">
+    <h1>Vehicle Map</h1>
+    <div id="map" style="height: 500px; width: 100%; border: 1px solid black;"></div>
+</body>
+</html>
+

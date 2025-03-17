@@ -1,0 +1,411 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Tire Reservation</title>
+      <link rel="icon" href="{% static 'images/logo_tab.png' %}" type="image/x-icon">
+      <link rel="stylesheet" href="{% static 'css/bootstrap.css' %}" type="text/css">
+      <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+      <script>
+
+        let map;
+        let geocoder;
+        let vehicleList = [];
+
+        function getBatteryColor(level) {
+          if (level > 40) {
+              return 'green'; // Full battery color
+          } else if (level > 10) {
+              return 'orange'; // Half battery color
+          } else {
+              return 'red'; // Low battery color
+          }
+        }
+
+        function initMap() {
+
+          map = new google.maps.Map(document.getElementById('map'), { 
+              zoom: 10,
+              gestureHandling: `greedy`,
+          });
+
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              // 获取纬度和经度
+              var latitude = position.coords.latitude;
+              var longitude = position.coords.longitude;
+              var currentLocation = { lat: latitude, lng: longitude };
+              map.setCenter(currentLocation);
+              
+            }, function() {
+              // 如果用户不允许获取位置或发生错误
+              var currentLocation = { lat: 55.871, lng: -4.29997 };
+              map.setCenter(currentLocation);
+            });
+          } 
+          else {
+            // 如果浏览器不支持 Geolocation API
+              var currentLocation = { lat: 55.871, lng: -4.29997 };
+              map.setCenter(currentLocation);
+          }
+
+          // Loop through the vehicles and add markers
+          var home_locations = {{ home_locations|safe }}; // Passing the vehicles data to JavaScript
+          let currentInfoWindow = null;
+
+          home_locations.forEach(function(home_locations) {
+            var icon = {
+                url: "{% static 'img/e_home.png' %}",
+                scaledSize: new google.maps.Size(45, 45),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(16, 32)
+            };
+
+            var marker = new google.maps.Marker({
+                position: {lat: parseFloat(home_locations.location_lat), lng: parseFloat(home_locations.location_long)},
+                map: map,
+                icon: icon
+            });
+
+            // Optionally, add an info window
+            var infowindow = new google.maps.InfoWindow({
+              content: `
+              <div>
+                  <strong>${home_locations.name}</strong><br>
+                  HID: ${home_locations.home_location_id}<br>
+                  Address: ${home_locations.address}<br>
+                  Total Capacity: ${home_locations.capacity}<br>
+              </div>`,  
+            });
+
+            marker.addListener('click', function() {
+              if(currentInfoWindow){
+                currentInfoWindow.close();
+              }
+              fetchVehicles(home_locations.home_location_id); // 传递 homelocation_id
+              infowindow.open(map, marker);
+              document.getElementById('search_input').value = ''; // 清空输入框
+              currentInfoWindow = infowindow;
+              document.getElementById('notice').style.display='none';
+              
+            });
+          });
+        }
+
+        function fetchVehicles(homelocation_id) {
+          fetch(`get_vehicles_by_homelocation_id/?homelocation_id=${homelocation_id}`)
+          .then(response => response.json())
+          .then(data => {
+              if (data.vehicles) {
+                  vehicleList = data.vehicles; 
+                  displayVehicles(data.vehicles, homelocation_id);
+              } else {
+                  alert('No vehicles found for this location');
+              }
+          })
+          .catch(error => console.error('Error:', error));
+        }
+
+        function displayVehicles(vehicles, homelocation_id) {
+          const vehiclesContainer = document.getElementById('vehiclesContainer');
+          vehiclesContainer.innerHTML = ''; // 清空表格内容
+
+          vehicles.forEach((vehicle, index) => {
+              let typeImageUrl = ''; 
+              let vehicleType = '';
+              // 根据 vehicle_type_id 设置图片 URL
+              if (vehicle.vehicle_type_id == "1") {
+                vehicleType = 'E-Car';
+                typeImageUrl = "{% static 'img/e_car.png' %}"; // 这里的 static 应该在服务器端渲染
+              } else if (vehicle.vehicle_type_id == "2") {
+                vehicleType = 'E-Scooter';
+                typeImageUrl = "{% static 'img/e_scooter.png' %}";
+              } else if (vehicle.vehicle_type_id == "3") {
+                vehicleType = 'E-Bike';
+                typeImageUrl = "{% static 'img/e_bike.png' %}";
+              }
+              const card  = `
+                  <div class="col-2 mb-5"> 
+                    <div class="card shadow-lg" data-vehicle-id="${vehicle.vehicle_id}">
+                      <img src="${typeImageUrl}" class="card-img-top position-absolute" alt="..." style="width: 64px; height: 64px; top: 20px; right: 20px;">
+                      <div class="card-body">
+                        <h5 class="card-title">${vehicle.model}</h5>
+                        <p class="card-text">VID: ${vehicle.vehicle_id}<br></p>
+                        <p class="card-text">Type: ${vehicleType}<br></p>
+                        <p class="card-text">Make: ${vehicle.make}<br></p>
+                        <p class="card-text">Year: ${vehicle.year}<br></p>
+                        <p class="card-text">Battery: ${vehicle.capacity}%<br></p>
+                        <div style="width: ${vehicle.capacity}%; background: ${getBatteryColor(vehicle.capacity)}; height: 10px; border-radius: 2px; margin-top: 1px"></div>
+                        <div class="btn-group w-100" role="group" aria-label="Basic">
+                          <button id="rentButton" class="btn btn-outline-success w-100 btn-rent" data-vehicle-id="${vehicle.vehicle_id}" data-vehicle-homelocation-id="${homelocation_id}" data-user-id="{{ request.user.id }}">Rent</button>
+                          <button id="defectiveButton" class="btn btn-outline-success w-100 btn-defective" data-vehicle-id="${vehicle.vehicle_id}">Defective</button>
+                        </div>
+                      </div>  
+                    </div>
+                  </div>`;
+              vehiclesContainer.innerHTML += card; // 将卡片添加到容器中
+          });
+        }   
+      </script>
+      <style>
+        .section_top{
+          color: white;
+          background-color: black;
+          width: 100%;
+          height:5%;
+          min-height: 60px;
+          border: 1px solid black;
+          background-color: rgb(0, 0, 0);
+        }
+        .section_mid{
+          width: 100%;
+          height:50%;
+          border: 1px solid black;
+          background-color: black;
+        }
+        .section_mid_bottom{
+          width: 100%;
+          height:2%;
+          min-height: 60px;
+          border: 1px solid black;
+          background-color: black;
+        }
+        .section_bottom{
+          display: flex;
+          width: 100%;
+          height:40%;
+          background-color: rgb(255, 255, 255);
+        }
+        .card {
+          height:36vh;
+        }
+        .card-body {
+            display: flex; /* 使用 Flexbox */
+            flex-direction: column; /* 列方向排列 */
+            justify-content: space-between; /* 均匀分布 */
+            padding: 10px; /* 减少卡片内边距 */
+            background-color: rgba(102, 139, 0, 0.226);
+        }
+        .card-text {
+            margin-bottom: 5px; /* 调整卡片文本之间的间距 */
+        }
+        .card-container {
+            width: 100%;
+            display: flex; /* 使用 flexbox 使卡片水平排列 */
+            overflow-x: auto; /* 启用水平滚动 */
+            scroll-behavior: smooth; /* 平滑滚动 */
+            padding: 10px; /* 添加一些内边距 */
+        }
+        .centered-input {
+            text-align: center; 
+        }
+        .dropdown-menu {
+            background-color: rgba(0, 0, 0, 0.4); /* 轻微透明的白色背景 */
+            backdrop-filter: blur(10px); /* 设置模糊效果，数值越大越模糊 */
+            border: none; /* 去掉边框 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 可选：添加轻微阴影 */
+          }
+      </style>
+    </head>
+
+    <body onload="initMap()">
+      <div class="container-fluid d-flex flex-column p-0 vh-100">
+        <div class="section_top">
+          <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+              <img src="{% static 'images/tire_logo_white.png' %}" alt="Brand Image" style=" display: 'block'; width: 100px; height: auto;">
+              <h1>Reservation</h1>
+              <div>
+                <a style="width: 120px;"href="{% url 'history' %}" class="btn btn-outline-light">My Invoice</a>
+                <a style="width: 120px;" href="{% url 'index' %}" class="btn btn-outline-light">Back</a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input class="btn btn-outline-danger" type="submit" value="Log Out">
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section_mid">
+          <div id="map" style="height: 100%; width: 100%; border: 1px solid black; "></div>
+        </div>
+        <div class="section_mid_bottom">
+          <div class="container d-flex justify-content-center align-items-center" style="height: 100%; width: 100%;">
+            <div class="input-group" style="max-width: 600px; height: 40px;"> <!-- 设置最大宽度 -->
+                <input type="text" id="search_input" class="form-control centered-input w-100" placeholder="Find a keyword of your vehicle~" style="height: 40px;margin-bottom: 5px;">
+                <div id="alertContainer" class="container" style="position: fixed; top:50%; left: 50%; transform: translate(-50%, -50%); z-index: 1050; display: none; width: 500px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="section_bottom">
+          <div class="card-container" id="vehiclesContainer"style="height: 100%; width: 100%;">
+            <div class="row" id="card-container">
+              <div id="notice" style="position: fixed; display: flex; justify-content: center; align-items: center; height: 35%;color: rgba(128, 128, 128, 0.61);">
+                <h1 style="margin-left: 0px;">Choose a Home Marker To Start Your Trip</h1>
+              </div>
+              <!-- define in the function -->
+            </div>
+          </div>
+        </div>
+      </div>
+          
+      <script>
+        
+        // 鼠标滚轮左右滑动功能
+        const container = document.getElementById('vehiclesContainer');
+
+        container.addEventListener('wheel', function(event) {
+            // 阻止默认的垂直滚动
+            event.preventDefault();
+            // 水平滚动，根据滚轮的旋转方向
+            container.scrollLeft += event.deltaY * 4; // deltaY 用于水平滚动
+        });
+
+        // 搜索功能
+        document.getElementById('search_input').addEventListener('input', function() {
+              const searchQuery = document.getElementById('search_input').value.toLowerCase(); // 获取输入的关键词
+              const filteredVehicles = vehicleList.filter(vehicle => {
+                let vehicleTypeTransfer = '';
+                // 根据 vehicle_type_id 设置图片 URL
+                if (vehicle.vehicle_type_id == "1") {
+                  vehicleTypeTransfer = 'E-Car';
+                } else if (vehicle.vehicle_type_id == "2") {
+                  vehicleTypeTransfer = 'E-Scooter';
+                } else if (vehicle.vehicle_type_id == "3") {
+                  vehicleTypeTransfer = 'E-Bike';
+                }
+                return String(vehicle.model).toLowerCase().includes(searchQuery) || 
+                        String(vehicleTypeTransfer).toLowerCase().includes(searchQuery) ||
+                        String(vehicle.vehicle_id).toLowerCase().includes(searchQuery) ||
+                        String(vehicle.make).toLowerCase().includes(searchQuery) || 
+                        String(vehicle.year).toLowerCase().includes(searchQuery) ||
+                        String(vehicle.capacity+"%").toLowerCase().includes(searchQuery);
+              });
+              
+              displayVehicles(filteredVehicles);
+        });
+
+
+        // Rent Vehcile logic
+        vehiclesContainer.addEventListener('click', function(event) {
+          const target = event.target;
+          if (target.classList.contains('btn-rent')) {
+            const vehicleId = target.getAttribute('data-vehicle-id'); // 获取车辆 ID
+            const homelocationId = target.getAttribute('data-vehicle-homelocation-id');
+            const userId = target.getAttribute('data-user-id');
+            console.log(`Vehicle ID: ${vehicleId}`);
+            console.log(`Homelocation ID: ${homelocationId}`)
+            console.log(`User ID: ${userId}`)
+            fetch(`rent_vehicle/?vehicle_id=${vehicleId}&homelocation_id=${homelocationId}&user_id=${userId}`)
+            .then(response => {
+                if (response.ok) {
+                    console.log('操作成功');  // 处理成功
+
+                    window.location.href = "{% url 'inprogress' %}";
+                } else {
+                    console.error('操作失败:', response.status);  // 处理错误
+                    
+                }
+            })
+            .catch(error => {
+                console.error('请求失败:', error);  // 处理网络错误
+                
+            });
+          }
+        });
+
+
+
+       // Report defective logic
+        vehiclesContainer.addEventListener('click', function(event) {
+          const target = event.target;
+          if (target.classList.contains('btn-defective')) {
+            const vehicleId = target.getAttribute('data-vehicle-id'); // 获取车辆 ID
+            console.log(`Vehicle ID: ${vehicleId}`);
+            fetch(`report_defective/?vehicle_id=${vehicleId}`)
+            .then(response => {
+                if (response.ok) {
+                    console.log('操作成功');  // 处理成功
+                    const buttons = document.querySelectorAll('button');
+                    buttons.forEach(button => {
+                      button.disabled = true;
+                    });
+                    const alertHtml = `
+                      <div class="alert alert-success" role="alert">
+                        Report defects successfully! Thank you~
+                      </div>
+                    `;
+                    document.getElementById('alertContainer').innerHTML = alertHtml;
+                    alertContainer.style.display = 'block'; 
+
+                    setTimeout(() => {
+                      const alertElement = alertContainer.querySelector('.alert');
+                      if (alertElement) {
+                          // 使用 Bootstrap 的 JavaScript 方法消失提示框
+                          const bsAlert = new bootstrap.Alert(alertElement);
+                          bsAlert.close(); // 关闭提示框
+                          location.reload();
+                      }
+                    }, 3000); // 3000 毫秒 = 3 秒
+                } else {
+                    console.error('操作失败:', response.status);  // 处理错误
+                    const buttons = document.querySelectorAll('button');
+                    buttons.forEach(button => {
+                      button.disabled = true;
+                    });
+                    const alertHtml = `
+                      <div class="alert alert-danger" role="alert">
+                        Report defects fail, please contact the operator!
+                      </div>
+                    `;
+                    document.getElementById('alertContainer').innerHTML = alertHtml;
+                    alertContainer.style.display = 'block'; 
+
+                    setTimeout(() => {
+                      const alertElement = alertContainer.querySelector('.alert');
+                      if (alertElement) {
+                          // 使用 Bootstrap 的 JavaScript 方法消失提示框
+                          const bsAlert = new bootstrap.Alert(alertElement);
+                          bsAlert.close(); // 关闭提示框
+                          location.reload();
+                      }
+                    }, 3000); // 3000 毫秒 = 3 秒
+                }
+            })
+            .catch(error => {
+                console.error('请求失败:', error);  // 处理网络错误
+                const buttons = document.querySelectorAll('button');
+                    buttons.forEach(button => {
+                      button.disabled = true;
+                    });
+                    const alertHtml = `
+                      <div class="alert alert-danger" role="alert">
+                        Network request failed, please contact the operator!
+                      </div>
+                    `;
+                    document.getElementById('alertContainer').innerHTML = alertHtml;
+                    alertContainer.style.display = 'block';
+
+                    setTimeout(() => {
+                      const alertElement = alertContainer.querySelector('.alert');
+                      if (alertElement) {
+                          // 使用 Bootstrap 的 JavaScript 方法消失提示框
+                          const bsAlert = new bootstrap.Alert(alertElement);
+                          bsAlert.close(); // 关闭提示框
+                          location.reload();
+                      }
+                    }, 3000); // 3000 毫秒 = 3 秒
+            });
+
+          }
+        });
+
+      </script>
+      <!-- jQuery and JavaScript Bundle with Popper 这里引入的是本地js文件-->
+      <script src="{% static 'js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
+
+    </body>
+</html>

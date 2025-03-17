@@ -1,0 +1,84 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Page</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #c9cbc7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            width: 100%;
+        }
+        .head-css {
+            background-color: white;
+            padding: 50px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 50px;
+            color: #060707;
+        }
+        .login-css {           
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .login-container h2 {
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-control {
+            height: 45px;
+            border-radius: 5px;
+        }
+        .btn-primary {
+            background-color: #28a745;
+            border-color: #28a745;
+            width: 100%;
+            border-radius: 5px;
+            height: 45px;
+        }
+        .footer-links {
+            margin-top: 15px;
+        }
+        .footer-links a {
+            color: #007bff;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="head-css">
+        <h1 style="color: #007bff;">Hey, Welcome back!</h1><br><br><br>
+   
+ 
+    <div class="login-css">
+        <h4>Log in to book your ride</h4><br>
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary">Sign in</button>
+            <div class="footer-links mt-3">
+                <a href="{% url 'register' %}">Don't have an account?</a>
+                <a href="{% url 'pass_reset' %}">Forgot password?</a>
+            </div>
+        </form>
+    </div>
+</div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
